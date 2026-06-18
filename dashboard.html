@@ -65,6 +65,65 @@ button{
 </div>
 
 <script type="module">
+    function getReferralRate(amount){
+    if(amount >= 2000) return 0.10;
+    if(amount >= 1000) return 0.08;
+    if(amount >= 500) return 0.07;
+    if(amount >= 200) return 0.05;
+    return 0;
+    }
+    async function processDeposit(deposit){
+
+    const amount = deposit.amount;
+
+    const rate = getReferralRate(amount);
+
+    if(rate <= 0) return;
+
+    // get invitee profile
+    const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", deposit.user_id)
+    .single();
+
+        if(!profile?.referred_by) return;
+
+    const bonus = amount * rate;
+
+    // update referrer's wallet
+    await supabase
+    .from("wallets")
+    .update({
+        balance: supabase.raw(`balance + ${bonus}`),
+        total_earned: supabase.raw(`total_earned + ${bonus}`)
+    })
+    .eq("user_id", profile.referred_by);
+
+    // log earnings
+    await supabase
+    .from("referral_earnings")
+    .insert({
+     referrer_id: profile.referred_by,
+        invitee_id: deposit.user_id,
+        deposit_id: deposit.id,
+        amount: bonus,
+        rate: rate * 100
+    });
+    }
+    async function deposit(amount){
+
+    const user = (await supabase.auth.getUser()).data.user;
+
+    await supabase.from("deposits").insert({
+        user_id: user.id,
+        amount: amount,
+        status: "pending"
+    });
+
+    alert("Deposit request submitted!");
+    }
+    
 import { createClient }
 from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
