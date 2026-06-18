@@ -8,21 +8,36 @@
 <style>
 body{
     font-family:Arial;
+    background:#f4f6f8;
+    margin:0;
     padding:20px;
+}
+
+.container{
+    max-width:500px;
+    margin:auto;
 }
 
 .card{
-    max-width:500px;
-    margin:auto;
+    background:white;
     padding:20px;
     border-radius:15px;
-    box-shadow:0 0 10px rgba(0,0,0,.1);
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+    margin-bottom:15px;
+}
+
+.balance{
+    font-size:28px;
+    font-weight:bold;
+    color:#4f46e5;
 }
 
 button{
-    padding:12px 20px;
+    padding:10px 15px;
     border:none;
     border-radius:10px;
+    background:#4f46e5;
+    color:white;
     cursor:pointer;
 }
 </style>
@@ -30,14 +45,23 @@ button{
 
 <body>
 
-<div class="card">
-    <h2>Welcome to EchoVault Rewards</h2>
+<div class="container">
 
-    <p><b>Name:</b> <span id="name"></span></p>
+    <div class="card">
+        <h2>EchoVault Wallet</h2>
+        <p>Email: <span id="email"></span></p>
+    </div>
 
-    <p><b>Email:</b> <span id="email"></span></p>
+    <div class="card">
+        <h3>Wallet Balance</h3>
+        <div class="balance">₱ <span id="balance">0.00</span></div>
+        <small>Total Earnings: ₱ <span id="earned">0.00</span></small>
+    </div>
 
-    <button onclick="logout()">Logout</button>
+    <div class="card">
+        <button onclick="logout()">Logout</button>
+    </div>
+
 </div>
 
 <script type="module">
@@ -49,8 +73,8 @@ const supabase = createClient(
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsaGlmZG5pZmJsdXJsdWhuaGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTc3NTIsImV4cCI6MjA5NzM3Mzc1Mn0.uCb8hs7wqj__q-zIEquy7snEiWxx10jXHNoP0Ey3dyo'
 );
 
-const { data:{ session } } =
-await supabase.auth.getSession();
+// Check session
+const { data:{ session } } = await supabase.auth.getSession();
 
 if(!session){
     window.location.href = "login.html";
@@ -58,23 +82,24 @@ if(!session){
 
 const user = session.user;
 
-document.getElementById("email").textContent =
-user.email;
+// show email
+document.getElementById("email").textContent = user.email;
 
-const { data: profile } =
-await supabase
-.from("profiles")
+// fetch wallet
+const { data: wallet, error } = await supabase
+.from("wallets")
 .select("*")
-.eq("id", user.id)
+.eq("user_id", user.id)
 .single();
 
-document.getElementById("name").textContent =
-profile?.full_name || "";
+if(wallet){
+    document.getElementById("balance").textContent = wallet.balance.toFixed(2);
+    document.getElementById("earned").textContent = wallet.total_earned.toFixed(2);
+}
 
+// logout
 window.logout = async function(){
-
     await supabase.auth.signOut();
-
     window.location.href = "login.html";
 }
 </script>
