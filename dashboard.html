@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+
+<style>
+body{
+    font-family:Arial;
+    padding:20px;
+}
+
+.card{
+    max-width:500px;
+    margin:auto;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+
+button{
+    padding:12px 20px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Welcome to EchoVault Rewards</h2>
+
+    <p><b>Name:</b> <span id="name"></span></p>
+
+    <p><b>Email:</b> <span id="email"></span></p>
+
+    <button onclick="logout()">Logout</button>
+</div>
+
+<script type="module">
+import { createClient }
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabase = createClient(
+    'https://tlhifdnifblurluhnhln.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsaGlmZG5pZmJsdXJsdWhuaGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTc3NTIsImV4cCI6MjA5NzM3Mzc1Mn0.uCb8hs7wqj__q-zIEquy7snEiWxx10jXHNoP0Ey3dyo'
+);
+
+const { data:{ session } } =
+await supabase.auth.getSession();
+
+if(!session){
+    window.location.href = "login.html";
+}
+
+const user = session.user;
+
+document.getElementById("email").textContent =
+user.email;
+
+const { data: profile } =
+await supabase
+.from("profiles")
+.select("*")
+.eq("id", user.id)
+.single();
+
+document.getElementById("name").textContent =
+profile?.full_name || "";
+
+window.logout = async function(){
+
+    await supabase.auth.signOut();
+
+    window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>
