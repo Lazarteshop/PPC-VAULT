@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel</title>
+<style>
+body{font-family:Arial;padding:20px;background:#f5f5f5}
+.card{background:white;padding:15px;margin-bottom:10px;border-radius:10px}
+button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer}
+.approve{background:green;color:white}
+</style>
+</head>
+
+<body>
+
+<h2>Deposit Requests</h2>
+
+<div id="list"></div>
+
+<script type="module">
+  const { data:{ session } } = await supabase.auth.getSession();
+
+if(!session){
+  window.location.href = "login.html";
+}
+
+const user = session.user;
+
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("*")
+  .eq("id", user.id)
+  .single();
+
+if(profile.role !== "admin"){
+  alert("Access denied!");
+  window.location.href = "dashboard.html";
+}
+import { createClient }
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabase = createClient(
+'https://tlhifdnifblurluhnhln.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsaGlmZG5pZmJsdXJsdWhuaGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTc3NTIsImV4cCI6MjA5NzM3Mzc1Mn0.uCb8hs7wqj__q-zIEquy7snEiWxx10jXHNoP0Ey3dyo'
+);
+
+// load deposits
+async function loadDeposits(){
+
+const { data } = await supabase
+.from('deposits')
+.select('*')
+.eq('status','pending');
+
+const container = document.getElementById('list');
+container.innerHTML = '';
+
+data.forEach(d => {
+
+container.innerHTML += `
+<div class="card">
+<p>User: ${d.user_id}</p>
+<p>Amount: ₱${d.amount}</p>
+<button class="approve" onclick="approve('${d.id}')">Approve</button>
+</div>
+`;
+
+});
+
+}
+
+window.approve = async function(id){
+
+const user = await supabase.auth.getUser();
+
+await supabase.rpc('approve_deposit', {
+dep_id: id,
+admin_id: user.data.user.id
+});
+
+alert('Approved!');
+loadDeposits();
+
+}
+
+loadDeposits();
+</script>
+
+</body>
+</html>
