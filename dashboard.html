@@ -57,7 +57,14 @@ button{
         <div class="balance">₱ <span id="balance">0.00</span></div>
         <small>Total Earnings: ₱ <span id="earned">0.00</span></small>
     </div>
+<div class="card">
+    <h3>Withdraw Funds</h3>
 
+    <input type="number" id="withdrawAmount" placeholder="Enter amount">
+
+    <button onclick="withdraw()">Request Withdrawal</button>
+</div>
+    
     <div class="card">
         <button onclick="logout()">Logout</button>
     </div>
@@ -72,6 +79,32 @@ button{
     if(amount >= 200) return 0.05;
     return 0;
     }
+    async function withdraw(){
+
+    const amount = parseFloat(
+        document.getElementById("withdrawAmount").value
+    );
+
+    const user = (await supabase.auth.getUser()).data.user;
+
+    const { data: wallet } = await supabase
+    .from("wallets")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+    if(amount > wallet.balance){
+        alert("Insufficient balance");
+        return;
+        }
+
+    await supabase.from("withdrawals").insert({
+        user_id: user.id,
+        amount: amount
+    });
+
+    alert("Withdrawal request sent!");
+}
     async function processDeposit(deposit){
 
     const amount = deposit.amount;
